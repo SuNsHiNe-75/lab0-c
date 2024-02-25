@@ -164,7 +164,14 @@ bool q_delete_dup(struct list_head *head)
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)
 {
-    // https://leetcode.com/problems/swap-nodes-in-pairs/
+    if (!head || list_empty(head))
+        return;
+
+    struct list_head *pre, *cur;
+    for (pre = head->next, cur = pre->next; pre != head && cur != head;
+         pre = pre->next, cur = pre->next) {
+        list_move(pre, cur);
+    }
 }
 
 /* Reverse elements in queue */
