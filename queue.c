@@ -15,8 +15,11 @@
 struct list_head *q_new()
 {
     struct list_head *q_head = malloc(sizeof(*q_head));
-    if (!q_head)
+    if (!q_head) {
+        free(q_head);
         return NULL;
+    }
+
     INIT_LIST_HEAD(q_head);
     return q_head;
 }
