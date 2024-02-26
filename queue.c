@@ -79,6 +79,7 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     strncpy(sp, rmv_element->value, bufsize);
+    sp[bufsize - 1] = '\0';
     list_del(&rmv_element->list);
 
     return rmv_element;
@@ -95,6 +96,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     strncpy(sp, rmv_element->value, bufsize);
+    sp[bufsize - 1] = '\0';
     list_del(&rmv_element->list);
 
     return rmv_element;
