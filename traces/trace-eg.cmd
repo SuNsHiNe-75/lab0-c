@@ -19,5 +19,23 @@ reverse
 size
 # Delete queue.  Goes back to a NULL queue.
 free
+
+new
+ih 1
+ih 3
+ih 6
+ih 2
+ih 3
+ih 7
+# 00000000
+option descend 0
+# do_sort
+sort
+# 00000000
+option descend 1
+# do_sort
+sort
+
+free
 # Exit program
 quit

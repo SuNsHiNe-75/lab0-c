@@ -195,20 +195,13 @@ void q_reverseK(struct list_head *head, int k)
 
 void merge2list(struct list_head *l_head,
                 struct list_head *r_head,
-                struct list_head *head,
-                bool descend)
+                struct list_head *head)
 {
     while (!list_empty(l_head) && !list_empty(r_head)) {
         element_t *ele1 = list_entry(l_head->next, element_t, list);
         element_t *ele2 = list_entry(r_head->next, element_t, list);
 
-        int cmp_result;
-        if (descend)
-            cmp_result = strcmp(ele1->value, ele2->value);
-        else
-            cmp_result = strcmp(ele2->value, ele1->value);
-
-        if ((descend && cmp_result >= 0) || (!descend && cmp_result <= 0))
+        if (strcmp(ele1->value, ele2->value) <= 0)
             list_move_tail(l_head->next, head);
         else
             list_move_tail(r_head->next, head);
@@ -222,7 +215,7 @@ void merge2list(struct list_head *l_head,
 /* Sort elements of queue in ascending/descending order */
 void q_sort(struct list_head *head, bool descend)
 {
-    if (!head || list_empty(head))
+    if (!head || list_empty(head) || list_is_singular(head))
         return;
 
     // Use fast/slow pointers to split list.
@@ -238,7 +231,10 @@ void q_sort(struct list_head *head, bool descend)
     list_cut_position(&l_head, &r_head, slow);
     q_sort(&l_head, descend);
     q_sort(&r_head, descend);
-    merge2list(&l_head, &r_head, head, descend);
+    merge2list(&l_head, &r_head, head);
+
+    if (descend)
+        q_reverse(head);
 }
 
 /* Remove every node which has a node with a strictly less value anywhere to
