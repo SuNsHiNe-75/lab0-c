@@ -82,11 +82,15 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *rmv_element = list_first_entry(head, element_t, list);
-    if (!rmv_element)
+    if (!rmv_element) {
         return NULL;
+    }
 
-    strncpy(sp, rmv_element->value, bufsize);
-    sp[bufsize - 1] = '\0';
+    if (sp != NULL) {
+        strncpy(sp, rmv_element->value, bufsize);
+        sp[bufsize - 1] = '\0';
+    }
+
     list_del(&rmv_element->list);
 
     return rmv_element;
@@ -99,11 +103,15 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *rmv_element = list_last_entry(head, element_t, list);
-    if (!rmv_element)
+    if (!rmv_element) {
         return NULL;
+    }
 
-    strncpy(sp, rmv_element->value, bufsize);
-    sp[bufsize - 1] = '\0';
+    if (sp != NULL) {
+        strncpy(sp, rmv_element->value, bufsize);
+        sp[bufsize - 1] = '\0';
+    }
+
     list_del(&rmv_element->list);
 
     return rmv_element;
