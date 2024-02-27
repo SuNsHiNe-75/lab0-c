@@ -219,8 +219,7 @@ void merge2list(struct list_head *l_head,
         list_splice_tail_init(r_head, head);
 }
 
-/* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend)
+void q_sort_asc(struct list_head *head)
 {
     if (!head || list_empty(head) || list_is_singular(head))
         return;
@@ -236,9 +235,15 @@ void q_sort(struct list_head *head, bool descend)
     LIST_HEAD(r_head);
     list_splice_tail_init(head, &r_head);
     list_cut_position(&l_head, &r_head, slow);
-    q_sort(&l_head, descend);
-    q_sort(&r_head, descend);
+    q_sort_asc(&l_head);
+    q_sort_asc(&r_head);
     merge2list(&l_head, &r_head, head);
+}
+
+/* Sort elements of queue in ascending/descending order */
+void q_sort(struct list_head *head, bool descend)
+{
+    q_sort_asc(head);
 
     if (descend)
         q_reverse(head);
