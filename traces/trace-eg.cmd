@@ -20,6 +20,7 @@ size
 # Delete queue.  Goes back to a NULL queue.
 free
 
+# test revK
 new
 ih 1
 ih 3
@@ -27,14 +28,14 @@ ih 6
 ih 2
 ih 3
 ih 7
-# 00000000
-option descend 0
-# do_sort
-sort
-# 00000000
-option descend 1
-# do_sort
-sort
+ih 111
+ih 222
+ih 9
+ih 8
+ih 7
+reverse
+reverseK 3
+reverseK 5
 
 free
 # Exit program
