@@ -105,17 +105,20 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
 #include "linenoise.h"
+#include "web.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
 #define LINENOISE_MAX_LINE 4096
@@ -179,6 +182,9 @@ enum KEY_ACTION {
 static void line_atexit(void);
 int line_history_add(const char *line);
 static void refresh_line(struct line_state *l);
+
+int web_fd;
+bool listen_web = false;
 
 /* Debugging macro. */
 #if 0
@@ -927,6 +933,36 @@ static int line_edit(int stdin_fd,
 
     if (write(l.ofd, prompt, l.plen) == -1)
         return -1;
+
+    fd_set set;
+
+    int max_fd = stdin_fd;
+    FD_ZERO(&set);
+    if (listen_web) {
+        FD_SET(web_fd, &set);
+        max_fd = max_fd > web_fd ? max_fd : web_fd;
+    }
+    FD_SET(stdin_fd, &set);
+    int result = select(max_fd + 1, &set, NULL, NULL, NULL);
+    if (result < 0)
+        return -1;
+
+    if (listen_web && FD_ISSET(web_fd, &set)) {
+        FD_CLR(web_fd, &set);
+        struct sockaddr_in clientaddr;
+        socklen_t clientlen = sizeof(clientaddr);
+        int web_connfd =
+            accept(web_fd, (struct sockaddr *) &clientaddr, &clientlen);
+
+        char *p = web_recv(web_connfd, &clientaddr);
+        char *buffer = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+        web_send(web_connfd, buffer);
+        strncpy(buf, p, strlen(p) + 1);
+        free(p);
+        close(web_connfd);
+        return strlen(buf);
+    }
+
     while (1) {
         signed char c;
         int nread;
@@ -1213,6 +1249,12 @@ char *linenoise(const char *prompt)
     if (count == -1)
         return NULL;
     return strdup(buf);
+}
+
+void linenoise_webfd(int fd)
+{
+    web_fd = fd;
+    listen_web = true;
 }
 
 /* This is just a wrapper the user may want to call in order to make sure
