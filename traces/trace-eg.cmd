@@ -37,6 +37,10 @@ reverse
 reverseK 3
 reverseK 5
 
+# test shuffle
+shuffle
+shuffle
+
 free
 # Exit program
 quit
