@@ -42,6 +42,7 @@ extern int show_entropy;
  * OK as long as head field of queue_t structure is in first position in
  * solution code
  */
+#include "list_sort.h"
 #include "queue.h"
 #include "shuffle.h"
 
@@ -86,6 +87,56 @@ typedef enum {
 } position_t;
 /* Forward declarations */
 static bool q_show(int vlevel);
+
+bool do_lsort(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s takes no arguments", argv[0]);
+        return false;
+    }
+
+    int cnt = 0;
+    if (!current || !current->q)
+        report(3, "Warning: Calling sort on null queue");
+    else
+        cnt = q_size(current->q);
+    error_check();
+
+    if (cnt < 2)
+        report(3, "Warning: Calling sort on single node");
+    error_check();
+
+    set_noallocate_mode(true);
+    if (current && exception_setup(true))
+        list_sort(current->q, cmp, descend);
+    exception_cancel();
+    set_noallocate_mode(false);
+
+    bool ok = true;
+    if (current && current->size) {
+        for (struct list_head *cur_l = current->q->next;
+             cur_l != current->q && --cnt; cur_l = cur_l->next) {
+            /* Ensure each element in ascending/descending order */
+            element_t *item, *next_item;
+            item = list_entry(cur_l, element_t, list);
+            next_item = list_entry(cur_l->next, element_t, list);
+            if (!descend && strcmp(item->value, next_item->value) > 0) {
+                report(1, "ERROR: Not sorted in ascending order");
+                ok = false;
+                break;
+            }
+
+            if (descend && strcmp(item->value, next_item->value) < 0) {
+                report(1, "ERROR: Not sorted in descending order");
+                ok = false;
+                break;
+            }
+        }
+    }
+
+    q_show(3);
+    return ok && !error_check();
+}
 
 static bool do_shuffle(int argc, char *argv[])
 {
@@ -1072,6 +1123,9 @@ static void console_init()
                 "");
     ADD_COMMAND(reverseK, "Reverse the nodes of the queue 'K' at a time",
                 "[K]");
+    ADD_COMMAND(
+        lsort,
+        "Sort queue in ascending/descening order provided by linux kernel", "");
     ADD_COMMAND(shuffle, "Do the Fisher–Yates Shuffle algorithm", "");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);

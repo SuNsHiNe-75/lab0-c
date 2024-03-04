@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 測試 shuffle 次數
-test_count = 100000
+test_count = 1000000
 input = "new\nit 1\nit 2\nit 3\nit 4\n"
 for i in range(test_count):
     input += "shuffle\n"
