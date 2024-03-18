@@ -49,12 +49,12 @@ static inline double uct_score(int n_total, int n_visits, double score)
 static struct node *select_move(struct node *node)
 {
     struct node *best_node = NULL;
-    double best_score = -1;
+    uint64_t best_score = 0ULL;
     for (int i = 0; i < N_GRIDS; i++) {
         if (!node->children[i])
             continue;
-        double score = uct_score(node->n_visits, node->children[i]->n_visits,
-                                 node->children[i]->score);
+        uint64_t score = uct_score(node->n_visits, node->children[i]->n_visits,
+                                   node->children[i]->score);
         if (score > best_score) {
             best_score = score;
             best_node = node->children[i];
@@ -63,7 +63,7 @@ static struct node *select_move(struct node *node)
     return best_node;
 }
 
-static double simulate(char *table, char player)
+static uint64_t simulate(char *table, char player)
 {
     char current_player = player;
     char temp_table[N_GRIDS];
@@ -85,10 +85,10 @@ static double simulate(char *table, char player)
             return calculate_win_value(win, player);
         current_player ^= 'O' ^ 'X';
     }
-    return 0.5;
+    return (uint64_t) (1ULL << (FIXED_SCALING_BITS - 1));
 }
 
-static void backpropagate(struct node *node, double score)
+static void backpropagate(struct node *node, uint64_t score)
 {
     while (node) {
         node->n_visits++;
@@ -120,13 +120,13 @@ int mcts(char *table, char player)
         memcpy(temp_table, table, N_GRIDS);
         while (1) {
             if ((win = check_win(temp_table)) != ' ') {
-                double score =
+                uint64_t score =
                     calculate_win_value(win, node->player ^ 'O' ^ 'X');
                 backpropagate(node, score);
                 break;
             }
             if (node->n_visits == 0) {
-                double score = simulate(temp_table, node->player);
+                uint64_t score = simulate(temp_table, node->player);
                 backpropagate(node, score);
                 break;
             }
