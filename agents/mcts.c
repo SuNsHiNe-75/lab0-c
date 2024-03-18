@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -12,7 +13,7 @@ struct node {
     int move;
     char player;
     int n_visits;
-    double score;
+    uint64_t score;
     struct node *parent;
     struct node *children[N_GRIDS];
 };
