@@ -38,12 +38,88 @@ static void free_node(struct node *node)
     free(node);
 }
 
-static inline double uct_score(int n_total, int n_visits, double score)
+static uint64_t fixed_power_int(uint64_t x,
+                                unsigned int frac_bits,
+                                unsigned int n)
+{
+    uint64_t result = 1ULL << frac_bits;
+
+    if (n) {
+        for (;;) {
+            if (n & 1) {
+                result *= x;
+                result += 1ULL << (frac_bits - 1);
+                result >>= frac_bits;
+            }
+            n >>= 1;
+            if (!n)
+                break;
+            x *= x;
+            x += 1ULL << (frac_bits - 1);
+            x >>= frac_bits;
+        }
+    }
+    return result;
+}
+
+uint64_t fixed_log(uint64_t x)
+{
+    uint64_t fixed_x = x << FIXED_SCALING_BITS;
+
+    if (x == 0)
+        return UINT64_MAX;
+
+    if (x == 1)
+        return 0ULL;
+
+    uint64_t result = 0;
+
+    for (int i = 1; i <= 16; ++i) {
+        if (i % 2 == 0) {
+            result -= fixed_power_int(fixed_x, FIXED_SCALING_BITS, i) / i;
+        } else {
+            result += fixed_power_int(fixed_x, FIXED_SCALING_BITS, i) / i;
+        }
+        fixed_x = (fixed_x * (x << FIXED_SCALING_BITS)) >> FIXED_SCALING_BITS;
+    }
+
+    return result;
+}
+
+uint64_t fixed_sqrt(uint64_t x)
+{
+    if (x <= 1)
+        return x;
+
+    uint64_t low = 0ULL;
+    uint64_t high = x;
+    uint64_t precision = 1ULL << (FIXED_SCALING_BITS - 2);
+
+    while (high - low > precision) {
+        uint64_t mid = (low + high) / 2;
+        uint64_t square = (mid * mid) >> FIXED_SCALING_BITS;
+
+        if (square < x) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+    return (low + high) / 2;
+}
+
+static inline uint64_t uct_score(int n_total, int n_visits, uint64_t score)
 {
     if (n_visits == 0)
-        return DBL_MAX;
-    return score / n_visits +
-           EXPLORATION_FACTOR * sqrt(log(n_total) / n_visits);
+        return UINT64_MAX;
+    uint64_t result = score << FIXED_SCALING_BITS /
+                                   (uint64_t) (n_visits << FIXED_SCALING_BITS);
+    uint64_t tmp =
+        EXPLORATION_FACTOR *
+        fixed_sqrt(fixed_log(n_total << FIXED_SCALING_BITS) / n_visits);
+    tmp >>= FIXED_SCALING_BITS;
+    return result + tmp;
 }
 
 static struct node *select_move(struct node *node)
