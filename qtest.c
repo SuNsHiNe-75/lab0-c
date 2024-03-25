@@ -63,6 +63,7 @@ extern int show_entropy;
 #define BIG_LIST_SIZE 30
 
 /* Global variables */
+int ai_vs_ai = 0;
 
 typedef struct {
     struct list_head head;
@@ -178,6 +179,7 @@ static bool do_ttt(int argc, char *argv[])
     memset(table, ' ', N_GRIDS);
     char turn = 'X';
     char ai = 'O';
+    bool first_move = true;
 
     negamax_init();
 
@@ -200,21 +202,49 @@ static bool do_ttt(int argc, char *argv[])
                 record_move(move);
             }
         } else {
-            draw_board(table);
-            int move;
-            while (1) {
-                move = get_input(turn);
-                if (table[move] == ' ') {
-                    break;
+            if (ai_vs_ai) {  // AI vs. AI
+                int move;
+                if (first_move) {
+                    move = rand() % (BOARD_SIZE * BOARD_SIZE - 1);
+                    first_move = false;
+                } else
+                    move = negamax_predict(table, turn).move;
+
+                if (move != -1) {
+                    table[move] = turn;
+                    record_move(move);
                 }
-                printf("Invalid operation: the position has been marked\n");
+            } else {  // Player vs. AI
+                draw_board(table);
+                int move;
+                while (1) {
+                    move = get_input(turn);
+                    if (table[move] == ' ') {
+                        break;
+                    }
+                    printf("Invalid operation: the position has been marked\n");
+                }
+                table[move] = turn;
+                record_move(move);
+                printf("move = %d\n", move);
             }
-            table[move] = turn;
-            record_move(move);
         }
+
         turn = turn == 'X' ? 'O' : 'X';
+
+        if (ai_vs_ai) {
+            draw_board(table);
+            time_t timer = time(NULL);
+            struct tm *tm_info = localtime(&timer);
+
+            char buffer[26];
+            strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+            puts(buffer);
+        }
     }
     print_moves();
+
+    move_count = 0;
 
     return true;
 }
@@ -1259,6 +1289,7 @@ static void console_init()
         "Sort queue in ascending/descening order provided by linux kernel", "");
     ADD_COMMAND(shuffle, "Do the Fisher–Yates Shuffle algorithm", "");
     ADD_COMMAND(ttt, "Play the game Tic-tac-toe", "");
+    add_param("ai_vs_ai", &ai_vs_ai, "Enable ttt of AI vs AI", NULL);
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",
